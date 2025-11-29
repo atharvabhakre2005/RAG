@@ -1,138 +1,258 @@
-🚀 AI-Debugger – Project Setup & Usage Guide
+🚀 AI Debugger – Automatic Code Fixing with Gemini 2.5 Flash + RAG + ChromaDB
 
-This project is a Node.js-based application that includes routing, services, utilities, and additional data folders such as artifacts and chroma-data.
-Follow this guide to set up and run the project smoothly.
+An advanced AI-powered debugging engine that analyzes code, runtime output, and error logs, retrieves similar issues using Vector Search (ChromaDB), and generates structured debugging responses using Google Gemini 2.5 Flash.
 
-📦 1. Prerequisites
+This project supports:
 
-Before running the project, make sure you have:
+✔️ Retrieval-Augmented Debugging (RAG)
+✔️ JSON-structured AI responses
+✔️ Automatic artifact logging
+✔️ Code-execution + debugging
+✔️ Full REST API
+✔️ Local vector store using ChromaDB
+✔️ Works with any language (Python, JS, C, Java, etc.)
 
-Node.js (v16+ recommended)
+📌 Features
+🔍 1. Intelligent Debugging
 
-NPM or Yarn
+Send code + runtime logs → get:
 
-Git (optional)
+root cause analysis
 
-Check using:
+corrected code snippet
 
-node -v
-npm -v
+explanation
 
-📁 2. Project Structure
-AI-DEBUGGER/
-│── artifacts/        # Generated output files
-│── chroma-data/      # Database / vector-store files
-│── node_modules/     
-│── routes/           # API routes
-│── services/         # Service layer logic
-│── utils/            # Helpers & utilities
-│── .env              # Environment variables (NOT in Git)
-│── package.json      
-│── server.js         # Main server entry
-│── seedDocs.js       # Script to seed initial documents
-│── test.js           # Testing script
+test cases
 
-⚙️ 3. Install Dependencies
+knowledge-base evidence
 
-Run:
+🧠 2. RAG (Retrieval Augmented Generation)
 
+ChromaDB stores past issues → similar debugging examples are retrieved and added as context.
+
+⚙️ 3. Google Gemini 2.5 Flash Support
+
+Uses:
+
+gemini-2.5-flash (main model)
+
+text-embedding-004 (embeddings)
+
+🗂 4. Artifact Storage
+
+Every debug request saved in:
+
+/artifacts/<uuid>.json
+
+
+Useful for analytics or debugging history.
+
+💾 5. Modular Code Design
+
+Separate modules for:
+
+AI Client
+
+ChromaDB Vector Store
+
+Prompt Builder
+
+Debugger Routes
+
+Seed Script
+
+📁 Project Structure
+AI-Debugger/
+│── artifacts/               # Saved debug sessions
+│── routes/
+│   └── debugger.js          # Debug API routes
+│── services/
+│   ├── geminiClient.js      # Gemini API wrapper
+│   ├── vectorStore.js       # ChromaDB interface
+│── utils/
+│   └── promptBuilder.js     # RAG + debugging prompt
+│── seedDocs.js              # Seeds ChromaDB with examples
+│── server.js                # Main Express server
+│── test.js                  # Example buggy code
+│── .env                     # API keys + config
+│── package.json
+└── README.md                # You are reading this 🙂
+
+🛠 Installation
+1️⃣ Clone the Repository
+git clone https://github.com/<your-username>/ai-debugger.git
+cd ai-debugger
+
+2️⃣ Install Dependencies
 npm install
 
+🔧 Environment Setup
 
-This will install all required packages listed in package.json.
+Create a .env file:
 
-🔑 4. Configure Environment Variables
+GEMINI_API_KEY=YOUR_API_KEY_HERE
+GEMINI_MODEL=gemini-2.5-flash
+PORT=8080
 
-Create a .env file in the project root:
+💽 Start ChromaDB (Vector Database)
 
-PORT=5000
-DB_PATH=./chroma-data
-API_KEY=your-key-here
+The debugger uses ChromaDB on port 8000.
 
+Option 1 — Docker (Recommended)
+docker run -p 8000:8000 chromadb/chroma
 
-(Your actual variables may differ — adjust accordingly.)
+Option 2 — Local install (pip)
+pip install chromadb
+chroma run --host localhost --port 8000
 
-🧪 5. Seed Initial Data (Optional)
-
-If your project uses seedDocs.js, run:
-
+📥 Seed Sample Debugging Docs
 node seedDocs.js
 
 
-This will populate required data into chroma-data/ or any data store you use.
+Expected output:
 
-🚀 6. Start the Server
+✅ Seeded sample docs into ChromaDB
 
-To run the backend:
-
+▶️ Start the Server
 node server.js
 
 
-OR if you prefer npm start:
+Output:
 
-npm start
+✅ AI Debugger running at http://localhost:8080
+
+🔌 API Usage
+🔹 POST /debug/debug-compiler
+
+Send code, logs, runtime output, etc.
+
+Example Request
+{
+  "language": "javascript",
+  "filePath": "src/utils/mathUtils.js",
+  "functionName": "divide",
+  "code": "console.log(1/0)",
+  "errorLogs": "Output is Infinity",
+  "runtimeOutput": ""
+}
+
+Example Response
+{
+  "requestId": "a1b2c3d4",
+  "retrievedCount": 3,
+  "result": {
+    "summary": "...",
+    "fix": "...",
+    "explanation": "...",
+    "steps": [...],
+    "fromKnowledgeBase": [...]
+  }
+}
+
+🧪 Example Buggy Script
+
+test.js
+
+import fs from "fs";
+
+fs.readFile(12345, "utf-8", (err, data) => {
+  if (err) console.error("Error occurred:", err);
+  else console.log("File content:", data);
+});
 
 
-The server should now run on:
-
-http://localhost:5000
-
-🔍 7. Testing
-
-You may run:
+Run:
 
 node test.js
 
 
-Use this for verifying endpoints or internal logic.
+Then send error logs + code to the debugger API.
 
-🗂️ 8. Useful Scripts
+📦 Artifacts
 
-If you want, you can add these to your package.json:
+Every debugging session is saved:
 
-"scripts": {
-  "start": "node server.js",
-  "seed": "node seedDocs.js",
-  "test": "node test.js"
-}
+/artifacts/<uuid>.json
 
 
-Then run:
+Includes:
 
-npm run seed
-npm run test
+original request
 
-🛠️ 9. Development Tips
+retrieved documents
 
-Always keep .env out of Git (already in .gitignore)
+Gemini response
 
-Do not commit node_modules/
+Perfect for:
 
-artifacts/ and chroma-data/ are generated → no need to push them
+analytics
 
-🔒 10. Troubleshooting
-❗ Port Already in Use
+training
 
-Run:
+audits
 
-npx kill-port 5000
+🛡 Troubleshooting
+❗ 1. Gemini model not found
 
-❗ Modules not found
+Fix: use correct model name
 
-Run:
+gemini-2.5-flash
 
-npm install
 
-❗ Permission errors (Linux/Mac)
+and update .env.
 
-Use:
+❗ 2. ChromaDB connection refused
 
-sudo npm install
+Check if Chroma is running:
+
+curl http://localhost:8000
+
+
+If not → start Docker/pip server.
+
+❗ 3. "Embedding error"
+
+Check you are using:
+
+text-embedding-004
+
+❗ 4. ".env not loading"
+
+Ensure:
+
+import dotenv from "dotenv";
+dotenv.config();
+
+
+exists at the top of server.js and geminiClient.js.
 
 🤝 Contributing
 
-Feel free to fork the repository and submit pull requests.
+Pull requests are welcome!
 
-📜 License
+Please follow:
 
-This project is licensed under the MIT License.
+Meaningful commit messages
+
+Clean modular code
+
+No secrets in commits
+
+Add meaningful test cases
+
+⭐ Future Enhancements (Optional)
+
+Web UI (React + Tailwind)
+
+Streaming Gemini responses
+
+Auto-run code sandbox
+
+Multi-language execution
+
+GitHub plugin integration
+
+RAG categories (JS/Python/Java)
+
+If you want any of these, tell me — I can generate full implementation.
