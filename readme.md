@@ -1,85 +1,111 @@
 🚀 AI Debugger – Automatic Code Fixing with Gemini 2.5 Flash + RAG + ChromaDB
 
-An advanced AI-powered debugging engine that analyzes code, runtime output, and error logs, retrieves similar issues using Vector Search (ChromaDB), and generates structured debugging responses using Google Gemini 2.5 Flash.
+An advanced AI-powered debugging engine that analyzes source code, runtime output, and error logs — retrieves similar past issues using Vector Search (ChromaDB) — and generates:
 
-This project supports:
+✔ Root cause analysis
 
-✔️ Retrieval-Augmented Debugging (RAG)
-✔️ JSON-structured AI responses
-✔️ Automatic artifact logging
-✔️ Code-execution + debugging
-✔️ Full REST API
-✔️ Local vector store using ChromaDB
-✔️ Works with any language (Python, JS, C, Java, etc.)
+✔ Corrected code (full auto-fix)
 
-📌 Features
-🔍 1. Intelligent Debugging
+✔ Step-by-step explanation
 
-Send code + runtime logs → get:
+✔ Test cases
 
-root cause analysis
+✔ Past-knowledge evidence (RAG)
 
-corrected code snippet
+Powered by Google Gemini 2.5 Flash + text-embedding-004.
+
+This backend is production-ready and can plug directly into:
+
+A custom IDE
+
+Online code compiler
+
+VS Code extensions
+
+Debugging dashboards
+
+✨ Features
+🔍 1. Intelligent Debugging (Auto Code Fixing)
+
+Send code + runtime logs → get a structured debugging JSON:
+
+rootCause
+
+correctedCode
+
+fix
 
 explanation
 
-test cases
+steps
 
-knowledge-base evidence
+testCases
 
-🧠 2. RAG (Retrieval Augmented Generation)
+fromKnowledgeBase
 
-ChromaDB stores past issues → similar debugging examples are retrieved and added as context.
+🧠 2. RAG (Retrieval Augmented Debugging)
 
-⚙️ 3. Google Gemini 2.5 Flash Support
+Uses ChromaDB to store past debugging sessions:
 
-Uses:
+Retrieves similar bugs
 
-gemini-2.5-flash (main model)
+Improves fix accuracy
 
-text-embedding-004 (embeddings)
+Includes citations in output
+
+⚙️ 3. Gemini 2.5 Flash Integration
+
+Models used:
+
+gemini-2.5-flash → debugging & reasoning
+
+text-embedding-004 → vector embeddings
 
 🗂 4. Artifact Storage
 
-Every debug request saved in:
+Every debug request is stored in:
 
 /artifacts/<uuid>.json
 
 
-Useful for analytics or debugging history.
+Includes:
 
-💾 5. Modular Code Design
+Original request
 
-Separate modules for:
+RAG retrieved docs
 
-AI Client
+AI response
 
-ChromaDB Vector Store
+Corrected code
 
-Prompt Builder
+Useful for:
 
-Debugger Routes
+Analytics
 
-Seed Script
+Regeneration
 
-📁 Project Structure
+Crash history
+
+Model tuning
+
+📦 5. Modular Code Design
 AI-Debugger/
-│── artifacts/               # Saved debug sessions
+│── artifacts/               # Debug session history
 │── routes/
 │   └── debugger.js          # Debug API routes
 │── services/
-│   ├── geminiClient.js      # Gemini API wrapper
-│   ├── vectorStore.js       # ChromaDB interface
+│   ├── geminiClient.js      # Gemini wrapper + JSON repair
+│   ├── vectorStore.js       # ChromaDB RAG interface
 │── utils/
 │   └── promptBuilder.js     # RAG + debugging prompt
-│── seedDocs.js              # Seeds ChromaDB with examples
-│── server.js                # Main Express server
-│── test.js                  # Example buggy code
-│── .env                     # API keys + config
+│── seedDocs.js              # Seeds ChromaDB with debugging examples
+│── server.js                # Express entry point
+│── test/                    # Buggy test scripts
+│── .env                     # API keys & config
 │── package.json
-└── README.md                # You are reading this 🙂
+└── README.md
 
-🛠 Installation
+📥 Installation
 1️⃣ Clone the Repository
 git clone https://github.com/<your-username>/ai-debugger.git
 cd ai-debugger
@@ -87,9 +113,9 @@ cd ai-debugger
 2️⃣ Install Dependencies
 npm install
 
-🔧 Environment Setup
+3️⃣ Environment Setup
 
-Create a .env file:
+Create .env:
 
 GEMINI_API_KEY=YOUR_API_KEY_HERE
 GEMINI_MODEL=gemini-2.5-flash
@@ -102,58 +128,74 @@ The debugger uses ChromaDB on port 8000.
 Option 1 — Docker (Recommended)
 docker run -p 8000:8000 chromadb/chroma
 
-Option 2 — Local install (pip)
+Option 2 — Python (Local Install)
 pip install chromadb
 chroma run --host localhost --port 8000
 
-📥 Seed Sample Debugging Docs
+📥 Seed the Knowledge Base
+
+Seed the RAG memory with common debugging cases:
+
 node seedDocs.js
 
 
-Expected output:
+Expected:
 
-✅ Seeded sample docs into ChromaDB
+🚀 Seeding ChromaDB...
+✔️ Added seed doc...
+✔️ Added seed doc...
+...
+✅ Seeding complete!
 
-▶️ Start the Server
+▶️ Start the Debugger Server
 node server.js
 
 
 Output:
 
-✅ AI Debugger running at http://localhost:8080
+AI Debugger running at http://localhost:8080
 
 🔌 API Usage
-🔹 POST /debug/debug-compiler
+POST /debug/debug-compiler
 
-Send code, logs, runtime output, etc.
+Send:
+
+filePath (optional)
+
+code (optional)
+
+errorLogs (recommended)
+
+runtimeOutput (optional)
+
+shouldApplyFix (true/false)
 
 Example Request
 {
   "language": "javascript",
-  "filePath": "src/utils/mathUtils.js",
-  "functionName": "divide",
-  "code": "console.log(1/0)",
-  "errorLogs": "Output is Infinity",
-  "runtimeOutput": ""
+  "filePath": "test/test1.js",
+  "errorLogs": "ERR_INVALID_ARG_TYPE",
+  "shouldApplyFix": false
 }
 
 Example Response
 {
   "requestId": "a1b2c3d4",
   "retrievedCount": 3,
+  "fixApplied": false,
   "result": {
-    "summary": "...",
+    "rootCause": "...",
+    "correctedCode": "...",
     "fix": "...",
     "explanation": "...",
-    "steps": [...],
-    "fromKnowledgeBase": [...]
+    "steps": ["..."],
+    "testCases": ["..."],
+    "fromKnowledgeBase": ["..."]
   }
 }
 
 🧪 Example Buggy Script
-
-test.js
-
+test/test1.js
 import fs from "fs";
 
 fs.readFile(12345, "utf-8", (err, data) => {
@@ -162,97 +204,94 @@ fs.readFile(12345, "utf-8", (err, data) => {
 });
 
 
-Run:
+Run it:
 
-node test.js
+node test/test1.js
 
 
-Then send error logs + code to the debugger API.
+Then send the error logs to the debugger.
+
+🔧 Auto-Fix Mode
+
+Turn on:
+
+"shouldApplyFix": true
+
+
+This will:
+
+✔ Create backup file
+✔ Overwrite the file with AI-generated corrected code
 
 📦 Artifacts
 
-Every debugging session is saved:
+Each AI session is saved:
 
 /artifacts/<uuid>.json
 
 
-Includes:
+Useful for:
 
-original request
+Analytics
 
-retrieved documents
+RAG training
 
-Gemini response
+Crash analysis
 
-Perfect for:
-
-analytics
-
-training
-
-audits
+Debug timeline
 
 🛡 Troubleshooting
-❗ 1. Gemini model not found
+❗ Gemini model not found
 
-Fix: use correct model name
+Use correct name:
 
 gemini-2.5-flash
 
+❗ ChromaDB connection refused
 
-and update .env.
-
-❗ 2. ChromaDB connection refused
-
-Check if Chroma is running:
+Check:
 
 curl http://localhost:8000
 
+❗ Embedding error
 
-If not → start Docker/pip server.
-
-❗ 3. "Embedding error"
-
-Check you are using:
+Ensure model used:
 
 text-embedding-004
 
-❗ 4. ".env not loading"
+❗ .env not loading
 
-Ensure:
+Add at top of your server files:
 
 import dotenv from "dotenv";
 dotenv.config();
 
-
-exists at the top of server.js and geminiClient.js.
-
 🤝 Contributing
 
-Pull requests are welcome!
+Pull requests welcome.
 
-Please follow:
+Guidelines:
 
-Meaningful commit messages
+Meaningful commits
 
-Clean modular code
+Clean modular structure
 
 No secrets in commits
 
-Add meaningful test cases
+Add relevant test cases
 
-⭐ Future Enhancements (Optional)
+🌟 Future Enhancements (Optional)
 
-Web UI (React + Tailwind)
+🔥 Web UI (React + Tailwind)
 
-Streaming Gemini responses
+🔥 Streaming AI responses
 
-Auto-run code sandbox
+🔥 Auto-run sandbox execution
 
-Multi-language execution
+🔥 Multi-file debugging
 
-GitHub plugin integration
+🔥 GitHub plugin
 
-RAG categories (JS/Python/Java)
+🔥 Error-category-based RAG
 
-If you want any of these, tell me — I can generate full implementation.
+If you want any of these, tell me — I can generate full implementations.
