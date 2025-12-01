@@ -9,12 +9,12 @@ import { v4 as uuidv4 } from "uuid";
 const router = express.Router();
 const artifactsDir = path.join(process.cwd(), "artifacts");
 
-// Ensure artifacts directory exists
+// Ensure artifact folder exists
 if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir);
 
 
 // ------------------------------------------------------
-// ✅ 1) Existing Route — Keep your old logic here
+// Existing route (if needed)
 // ------------------------------------------------------
 router.post("/run-and-debug", async (req, res) => {
   res.json({ message: "Your old /run-and-debug logic stays here." });
@@ -22,7 +22,7 @@ router.post("/run-and-debug", async (req, res) => {
 
 
 // ------------------------------------------------------
-// ✅ 2) NEW AI Debugger Route (with Auto Code Fix)
+// 🚀 New Debugger Route (Code OR File)
 // ------------------------------------------------------
 router.post("/debug-compiler", async (req, res) => {
   try {
@@ -35,41 +35,43 @@ router.post("/debug-compiler", async (req, res) => {
       shouldApplyFix = false
     } = req.body;
 
-
     // ------------------------------------------------------
-    // 🔹 2.1 Read code from file if filePath provided
+    // 1) If filePath provided → Read file
     // ------------------------------------------------------
     if (filePath) {
-      const absolutePath = path.resolve(process.cwd(), filePath);
+      const fullPath = path.resolve(process.cwd(), filePath);
 
-      if (!fs.existsSync(absolutePath)) {
-        return res.status(400).json({ error: `File not found: ${absolutePath}` });
+      if (!fs.existsSync(fullPath)) {
+        return res.status(400).json({ error: `File not found: ${fullPath}` });
       }
 
-      code = fs.readFileSync(absolutePath, "utf-8");
+      code = fs.readFileSync(fullPath, "utf-8");
     }
 
-    // Validation
+    // ------------------------------------------------------
+    // 2) Validate input
+    // ------------------------------------------------------
     if (!code && !errorLogs) {
       return res.status(400).json({
-        error: "Provide at least code, or filePath, or errorLogs"
+        error: "You must provide either 'code' or 'errorLogs' or 'filePath'."
       });
     }
 
-
     // ------------------------------------------------------
-    // 🔹 2.2 RAG — Retrieve similar debugging examples
+    // 3) RAG Retrieval (ChromaDB)
     // ------------------------------------------------------
     let retrieved = [];
     try {
-      retrieved = await vectorStore.querySimilarDocs(code + "\n" + errorLogs, 3);
+      retrieved = await vectorStore.querySimilarDocs(
+        (code || "") + "\n" + (errorLogs || ""),
+        3
+      );
     } catch (err) {
       console.warn("⚠️ ChromaDB not reachable → Skipping retrieval.");
     }
 
-
     // ------------------------------------------------------
-    // 🔹 2.3 Build Prompt for Gemini
+    // 4) Build Prompt
     // ------------------------------------------------------
     const prompt = buildPrompt({
       code,
@@ -79,15 +81,13 @@ router.post("/debug-compiler", async (req, res) => {
       retrieved
     });
 
-
     // ------------------------------------------------------
-    // 🔹 2.4 Send request to Gemini
+    // 5) Get AI Response (JSON)
     // ------------------------------------------------------
     const geminiResp = await sendToAI(prompt);
 
-
     // ------------------------------------------------------
-    // 🔹 2.5 Save artifact for logging/history
+    // 6) Save artifact
     // ------------------------------------------------------
     const requestId = uuidv4();
 
@@ -96,27 +96,25 @@ router.post("/debug-compiler", async (req, res) => {
       JSON.stringify({ input: req.body, retrieved, geminiResp }, null, 2)
     );
 
-
     // ------------------------------------------------------
-    // 🔹 2.6 Apply Fix (Optional)
+    // 7) Auto-Fix (Only if filePath is given)
     // ------------------------------------------------------
     let fixApplied = false;
 
-    if (shouldApplyFix && geminiResp.correctedCode && filePath) {
-      const absolutePath = path.resolve(process.cwd(), filePath);
+    if (shouldApplyFix && filePath && geminiResp.correctedCode) {
+      const fullPath = path.resolve(process.cwd(), filePath);
 
-      // Backup original file
-      fs.writeFileSync(absolutePath + ".bak", code);
+      // backup original
+      fs.writeFileSync(fullPath + ".bak", code);
 
-      // Write corrected version
-      fs.writeFileSync(absolutePath, geminiResp.correctedCode);
+      // write fixed version
+      fs.writeFileSync(fullPath, geminiResp.correctedCode);
 
       fixApplied = true;
     }
 
-
     // ------------------------------------------------------
-    // 🔹 2.7 Final Response
+    // 8) Final Response
     // ------------------------------------------------------
     return res.json({
       requestId,
